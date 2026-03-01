@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, abort
 from pymongo import MongoClient
-from pymongo.errors import PyMongoError
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
@@ -11,7 +11,12 @@ from config import *
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', SECRET_KEY)
 
-client = MongoClient(os.getenv('MONGO_URI', MONGO_URI), serverSelectionTimeoutMS=5000)
+client = MongoClient(
+    os.getenv('MONGO_URI', MONGO_URI),
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+    socketTimeoutMS=5000,
+)
 db = client[DATABASE_NAME]
 
 
@@ -21,6 +26,23 @@ def database_ready():
         return True
     except Exception:
         return False
+
+
+@app.errorhandler(ServerSelectionTimeoutError)
+@app.errorhandler(PyMongoError)
+def handle_mongo_error(_error):
+    return render_template(
+        "login.html",
+        error="Database connection failed. Verify Render MONGO_URI and MongoDB Atlas Network Access (0.0.0.0/0)."
+    ), 503
+
+
+@app.errorhandler(500)
+def handle_internal_error(_error):
+    return render_template(
+        "login.html",
+        error="Temporary server error. Please try again in a moment."
+    ), 500
 
 # ---------------- ROLE DECORATOR ----------------
 def roles_required(*roles):
