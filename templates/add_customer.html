@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-4 shadow col-md-6">
+    <h4>Add Customer</h4>
+
+    <form method="POST">
+        <input type="text" name="name" class="form-control mb-3" placeholder="Name" required>
+        <input type="text" name="phone" class="form-control mb-3" placeholder="Phone" required>
+        <input type="text" name="vehicle" class="form-control mb-3" placeholder="Vehicle Number" required>
+        <button class="btn btn-success">Save Customer</button>
+    </form>
+</div>
+
+{% endblock %}

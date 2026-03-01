@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4 class="mb-4">Staff Management</h4>
+
+<div class="card p-4 shadow col-md-6 mb-4">
+    <form method="POST" action="/add_staff">
+        <input type="text" name="username" class="form-control mb-3" placeholder="Username" required>
+        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+        <button class="btn btn-primary">Add Staff</button>
+    </form>
+</div>
+
+<div class="card p-4 shadow">
+    <table class="table table-bordered">
+        <tr>
+            <th>Username</th>
+            <th>Created</th>
+            <th>Action</th>
+        </tr>
+
+        {% for staff in staffs %}
+        <tr>
+            <td>{{ staff.username }}</td>
+            <td>{{ staff.created_at.strftime('%d-%m-%Y') }}</td>
+            <td>
+                <a href="/delete_staff/{{ staff._id }}" 
+                   class="btn btn-danger btn-sm"
+                   onclick="return confirm('Delete staff?')">
+                   Delete
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

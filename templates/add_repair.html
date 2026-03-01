@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-4 shadow col-md-6">
+    <h4>Add Repair</h4>
+
+    <form method="POST">
+        <input type="text" name="customer" class="form-control mb-3" placeholder="Customer Name" required>
+        <input type="text" name="service" class="form-control mb-3" placeholder="Service Type" required>
+        <input type="number" name="cost" class="form-control mb-3" placeholder="Cost" required>
+        <input type="number" name="warranty" class="form-control mb-3" placeholder="Warranty (Months)">
+        <button class="btn btn-warning">Save Repair</button>
+    </form>
+</div>
+
+{% endblock %}

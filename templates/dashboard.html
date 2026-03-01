@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<div class="card p-3 shadow mb-4">
+    <form method="GET" action="/dashboard" class="d-flex">
+        <input type="text" 
+               name="search" 
+               value="{{ search or '' }}" 
+               class="form-control me-2"
+               placeholder="Search customer, phone, vehicle, service...">
+
+        <button class="btn btn-primary me-2">Search</button>
+
+        <a href="/dashboard" class="btn btn-secondary">Clear</a>
+    </form>
+</div>
+
+<h3 class="mb-4">Dashboard Overview</h3>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card p-4 shadow text-center">
+            <h6>Total Customers</h6>
+            <h2>{{ total_customers }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 shadow text-center">
+            <h6>Total Repairs</h6>
+            <h2>{{ total_repairs }}</h2>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card p-4 shadow mb-5">
+    <h5>Customers</h5>
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Vehicle</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in customers %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.phone }}</td>
+                <td>{{ c.vehicle }}</td>
+                <td>
+                    <a href="/delete_customer/{{ c._id }}" 
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete?')">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Repairs Table -->
+<div class="card p-4 shadow">
+    <h5>Repairs</h5>
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Customer</th>
+                <th>Service</th>
+                <th>Cost</th>
+                <th>Warranty</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in repairs %}
+            <tr>
+                <td>{{ r.customer }}</td>
+                <td>{{ r.service }}</td>
+                <td>₹ {{ r.cost }}</td>
+                <td>{{ r.warranty }} Months</td>
+                <td>{{ r.status }}</td>
+                <td>
+                    <a href="/delete_repair/{{ r._id }}" 
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete?')">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
