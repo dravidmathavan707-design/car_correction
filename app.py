@@ -4,12 +4,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 from bson.objectid import ObjectId
+import os
 from config import *
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = os.getenv('SECRET_KEY', SECRET_KEY)
 
-client = MongoClient(MONGO_URI)
+client = MongoClient(os.getenv('MONGO_URI', MONGO_URI))
 db = client[DATABASE_NAME]
 
 # ---------------- ROLE DECORATOR ----------------
