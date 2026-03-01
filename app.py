@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, abort
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
@@ -10,8 +11,16 @@ from config import *
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', SECRET_KEY)
 
-client = MongoClient(os.getenv('MONGO_URI', MONGO_URI))
+client = MongoClient(os.getenv('MONGO_URI', MONGO_URI), serverSelectionTimeoutMS=5000)
 db = client[DATABASE_NAME]
+
+
+def database_ready():
+    try:
+        client.admin.command("ping")
+        return True
+    except Exception:
+        return False
 
 # ---------------- ROLE DECORATOR ----------------
 def roles_required(*roles):
@@ -46,16 +55,23 @@ def login():
             session["role"] = "admin"
             return redirect("/dashboard")
 
+        if not database_ready():
+            return render_template("login.html", error="Database connection failed. Check Render MONGO_URI and MongoDB Atlas Network Access.")
+
         # Staff
-        user = db.users.find_one({"username": username, "role": "staff"})
+        try:
+            user = db.users.find_one({"username": username, "role": "staff"})
+        except PyMongoError:
+            return render_template("login.html", error="Database query failed. Verify MongoDB username, password, and cluster settings.")
+
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
             session["role"] = "staff"
             return redirect("/dashboard")
 
-        return "Invalid Credentials"
+        return render_template("login.html", error="Invalid credentials")
 
-    return render_template("login.html")
+    return render_template("login.html", error=None)
 
 @app.route("/logout")
 def logout():
