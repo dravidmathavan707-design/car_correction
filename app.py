@@ -188,3 +188,7 @@ def delete_staff(id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+# mongodb+srv://<db_username>:<db_password>@cluster0.mpgvf66.mongodb.net/
+
