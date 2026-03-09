@@ -75,6 +75,7 @@
                 <th>Service</th>
                 <th>Cost</th>
                 <th>Warranty</th>
+                <th>Damaged Photos</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -86,6 +87,17 @@
                 <td>{{ r.service }}</td>
                 <td>₹ {{ r.cost }}</td>
                 <td>{{ r.warranty }} Months</td>
+                <td>
+                    {% if r.damage_photos %}
+                        {% for photo in r.damage_photos %}
+                        <a href="{{ url_for('static', filename=photo) }}" target="_blank" rel="noopener noreferrer" class="me-1 d-inline-block mb-1">
+                            <img src="{{ url_for('static', filename=photo) }}" alt="Damaged part" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid #ccc;">
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">No photos</span>
+                    {% endif %}
+                </td>
                 <td>{{ r.status }}</td>
                 <td>
                     <a href="/delete_repair/{{ r._id }}" 

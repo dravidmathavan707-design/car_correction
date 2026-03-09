@@ -2,14 +2,28 @@ from flask import Flask, render_template, request, redirect, session, abort
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 from functools import wraps
 from datetime import datetime
 from bson.objectid import ObjectId
 import os
+import uuid
 from config import *
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', SECRET_KEY)
+if os.path.isabs(UPLOAD_FOLDER):
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, UPLOAD_FOLDER)
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 client = MongoClient(
     os.getenv('MONGO_URI', MONGO_URI),
@@ -43,6 +57,14 @@ def handle_internal_error(_error):
         "login.html",
         error="Temporary server error. Please try again in a moment."
     ), 500
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_error):
+    return render_template(
+        "add_repair.html",
+        error="Upload is too large. Please keep total photos under 10 MB."
+    ), 413
 
 # ---------------- ROLE DECORATOR ----------------
 def roles_required(*roles):
@@ -176,21 +198,51 @@ def delete_customer(id):
 @roles_required("admin", "staff")
 def add_repair():
     if request.method == "POST":
+        uploaded_photos = request.files.getlist("damage_photos")
+        damage_photo_paths = []
+
+        for photo in uploaded_photos:
+            if not photo or photo.filename == "":
+                continue
+
+            if not allowed_file(photo.filename):
+                return render_template(
+                    "add_repair.html",
+                    error="Only image files are allowed (jpg, jpeg, png, webp)."
+                )
+
+            filename = secure_filename(photo.filename)
+            extension = filename.rsplit(".", 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{extension}"
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            photo.save(save_path)
+            damage_photo_paths.append(f"uploads/repairs/{unique_filename}")
+
         db.repairs.insert_one({
             "customer": request.form["customer"],
             "service": request.form["service"],
             "cost": request.form["cost"],
             "warranty": request.form["warranty"],
+            "damage_photos": damage_photo_paths,
             "status": "Pending",
             "created_at": datetime.now()
         })
         return redirect("/dashboard")
 
-    return render_template("add_repair.html")
+    return render_template("add_repair.html", error=None)
 
 @app.route("/delete_repair/<id>")
 @roles_required("admin", "staff")
 def delete_repair(id):
+    repair = db.repairs.find_one({"_id": ObjectId(id)})
+
+    # Best effort cleanup for previously uploaded damaged-part photos.
+    if repair and repair.get("damage_photos"):
+        for relative_path in repair.get("damage_photos", []):
+            photo_path = os.path.join(app.static_folder, relative_path.replace("/", os.sep))
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+
     db.repairs.delete_one({"_id": ObjectId(id)})
     return redirect("/dashboard")
 
