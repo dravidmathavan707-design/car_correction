@@ -1,7 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="card p-4 shadow col-md-6">
+<style>
+    .photo-option-btn {
+        width: 50%;
+        padding: 20px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        border: 2px solid #ffc107;
+        background-color: #fff;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .photo-option-btn:hover {
+        background-color: #ffc107;
+        color: white;
+    }
+    .photo-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+    }
+    .photo-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+    }
+    .photo-item img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+    }
+    .photo-item .remove-photo {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        border: none;
+        padding: 3px 8px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .photo-count {
+        font-weight: bold;
+        color: #ffc107;
+        margin-bottom: 10px;
+    }
+    .hidden-input {
+        display: none;
+    }
+</style>
+
+<div class="card p-4 shadow col-md-8">
     <h4>Add Repair</h4>
 
     {% if error %}
@@ -16,15 +68,118 @@
         <input type="number" name="cost" class="form-control mb-3" placeholder="Cost" required>
         <input type="number" name="warranty" class="form-control mb-3" placeholder="Warranty (Months)">
         
-        <label class="form-label">Damaged Part Photos (Optional)</label>
-        <input type="file" name="damage_photos" class="form-control mb-2" accept="image/*" capture multiple>
+        <label class="form-label">Damaged Part Photos (Optional - Max 13 Photos)</label>
+        
+        <div class="photo-count">
+            Photos selected: <span id="photo-count">0</span> / 13
+        </div>
+        
+        <!-- Hidden file inputs -->
+        <input type="file" id="camera-input" name="damage_photos" class="hidden-input" accept="image/*" capture="environment" multiple>
+        <input type="file" id="gallery-input" name="damage_photos" class="hidden-input" accept="image/*" multiple>
+        
+        <!-- Buttons to trigger file inputs -->
+        <button type="button" class="btn photo-option-btn" id="camera-btn">
+            <i class="fas fa-camera"></i> Take Photo (Mobile Camera)
+        </button>
+        <button type="button" class="btn photo-option-btn" id="gallery-btn">
+            <i class="fas fa-image"></i> Select Photos (Gallery/Files)
+        </button>
+        
+        <!-- Photo preview -->
+        <div class="photo-preview" id="photo-preview"></div>
+        
         <small class="text-muted d-block mb-3">
-             On mobile: Choose to take a photo or select from gallery<br>
-             On desktop: Upload multiple photos (jpg, jpeg, png, webp)
+            You can add up to 13 photos per customer. Supported formats: jpg, jpeg, png, webp
         </small>
 
-        <button class="btn btn-warning">Save Repair</button>
+        <button type="submit" class="btn btn-warning">Save Repair</button>
     </form>
 </div>
+
+<script>
+    let selectedFiles = [];
+    const maxPhotos = 13;
+    const cameraInput = document.getElementById('camera-input');
+    const galleryInput = document.getElementById('gallery-input');
+    const cameraBtn = document.getElementById('camera-btn');
+    const galleryBtn = document.getElementById('gallery-btn');
+    const photoPreview = document.getElementById('photo-preview');
+    const photoCount = document.getElementById('photo-count');
+
+    cameraBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        cameraInput.click();
+    });
+
+    galleryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        galleryInput.click();
+    });
+
+    function handleFileSelection(files) {
+        for (let file of files) {
+            if (selectedFiles.length >= maxPhotos) {
+                alert(`Maximum ${maxPhotos} photos allowed`);
+                break;
+            }
+            
+            // Check if file is already selected
+            if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                selectedFiles.push(file);
+            }
+        }
+        updatePreview();
+        updatePhotoCount();
+    }
+
+    function updatePhotoCount() {
+        photoCount.textContent = selectedFiles.length;
+    }
+
+    function updatePreview() {
+        photoPreview.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Photo ${index + 1}">
+                    <button type="button" class="remove-photo" data-index="${index}">✕</button>
+                `;
+                photoPreview.appendChild(photoItem);
+                
+                photoItem.querySelector('.remove-photo').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectedFiles.splice(index, 1);
+                    updatePreview();
+                    updatePhotoCount();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    cameraInput.addEventListener('change', (e) => {
+        handleFileSelection(Array.from(e.target.files));
+    });
+
+    galleryInput.addEventListener('change', (e) => {
+        handleFileSelection(Array.from(e.target.files));
+    });
+
+    // Update hidden inputs before form submission
+    document.querySelector('form').addEventListener('submit', (e) => {
+        // Create a new DataTransfer to set files
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+        
+        cameraInput.files = dataTransfer.files;
+        galleryInput.files = dataTransfer.files;
+    });
+</script>
 
 {% endblock %}

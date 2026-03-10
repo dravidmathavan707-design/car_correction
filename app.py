@@ -199,12 +199,18 @@ def delete_customer(id):
 def add_repair():
     if request.method == "POST":
         uploaded_photos = request.files.getlist("damage_photos")
+        
+        # Validate photo limit (max 13 photos per customer)
+        valid_photos = [p for p in uploaded_photos if p and p.filename != ""]
+        if len(valid_photos) > 13:
+            return render_template(
+                "add_repair.html",
+                error="Maximum 13 photos allowed per customer. Please reduce the number of photos."
+            )
+        
         damage_photo_paths = []
 
-        for photo in uploaded_photos:
-            if not photo or photo.filename == "":
-                continue
-
+        for photo in valid_photos:
             if not allowed_file(photo.filename):
                 return render_template(
                     "add_repair.html",

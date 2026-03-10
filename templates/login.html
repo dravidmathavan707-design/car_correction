@@ -1,27 +1,514 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Car Correction - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -150px;
+            left: -150px;
+            animation: float 8s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            bottom: -100px;
+            right: -100px;
+            animation: float 10s ease-in-out infinite reverse;
+            z-index: 1;
+        }
+
+        /* Animated cars */
+        .car {
+            position: fixed;
+            bottom: 0;
+            z-index: 2;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .car-1 {
+            width: 120px;
+            height: 60px;
+            left: -120px;
+            bottom: 30%;
+            animation: carDrive1 15s linear infinite;
+        }
+
+        .car-2 {
+            width: 100px;
+            height: 50px;
+            left: -100px;
+            bottom: 50%;
+            animation: carDrive2 20s linear infinite 3s;
+        }
+
+        .car-3 {
+            width: 110px;
+            height: 55px;
+            left: -110px;
+            bottom: 70%;
+            animation: carDrive3 18s linear infinite 6s;
+        }
+
+        @keyframes carDrive1 {
+            0% {
+                left: -120px;
+            }
+            100% {
+                left: 100vw;
+            }
+        }
+
+        @keyframes carDrive2 {
+            0% {
+                left: -100px;
+            }
+            100% {
+                left: 100vw;
+            }
+        }
+
+        @keyframes carDrive3 {
+            0% {
+                left: -110px;
+            }
+            100% {
+                left: 100vw;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) translateX(0px);
+            }
+            50% {
+                transform: translateY(30px) translateX(20px);
+            }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px;
+            padding: 0 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header h2 {
+            color: #333;
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .icon-car {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            animation: slideUp 0.8s ease-out both;
+        }
+
+        .form-group:nth-child(1) {
+            animation-delay: 0.3s;
+        }
+
+        .form-group:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            color: #667eea;
+            font-size: 18px;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .form-control {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 12px 12px 12px 45px;
+            font-size: 15px;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: #fff;
+            border-color: #667eea;
+            color: #333;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #bbb;
+        }
+
+        .form-control:focus + .input-icon {
+            color: #764ba2;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: #764ba2;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            background: #ff6b6b;
+            color: white;
+            border-left: 4px solid #ff5252;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-10px);
+            }
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .alert-danger {
+            background: #ff6b6b;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out 0.5s both;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                left: -100%;
+            }
+            50% {
+                left: 100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Loading state */
+        .btn-login.loading {
+            pointer-events: none;
+        }
+
+        .btn-login.loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 40px 25px;
+            }
+
+            .login-header h2 {
+                font-size: 24px;
+            }
+
+            .form-control {
+                padding: 10px 10px 10px 40px;
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-dark d-flex align-items-center justify-content-center vh-100">
+<body>
 
-<div class="card p-5 shadow" style="width:400px;">
-    <h3 class="text-center mb-4">Car correction Login</h3>
+<!-- Animated cars in background -->
+<svg class="car car-1" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+    <!-- Car body -->
+    <rect x="10" y="25" width="100" height="20" rx="5" fill="rgba(255, 255, 255, 0.9)"/>
+    <!-- Car top -->
+    <rect x="30" y="12" width="60" height="18" rx="3" fill="rgba(255, 255, 255, 0.9)"/>
+    <!-- Front wheel -->
+    <circle cx="28" cy="45" r="6" fill="rgba(255, 255, 255, 0.9)"/>
+    <circle cx="28" cy="45" r="4" fill="rgba(102, 126, 234, 0.6)"/>
+    <!-- Rear wheel -->
+    <circle cx="92" cy="45" r="6" fill="rgba(255, 255, 255, 0.9)"/>
+    <circle cx="92" cy="45" r="4" fill="rgba(102, 126, 234, 0.6)"/>
+    <!-- Windows -->
+    <rect x="35" y="15" width="15" height="12" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+    <rect x="55" y="15" width="15" height="12" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+</svg>
 
-    {% if error %}
-    <div class="alert alert-danger" role="alert">
-        {{ error }}
+<svg class="car car-2" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+    <!-- Car body -->
+    <rect x="8" y="20" width="84" height="18" rx="4" fill="rgba(255, 200, 124, 0.9)"/>
+    <!-- Car top -->
+    <rect x="25" y="8" width="50" height="16" rx="3" fill="rgba(255, 200, 124, 0.9)"/>
+    <!-- Front wheel -->
+    <circle cx="22" cy="38" r="5" fill="rgba(255, 200, 124, 0.9)"/>
+    <circle cx="22" cy="38" r="3" fill="rgba(200, 100, 50, 0.6)"/>
+    <!-- Rear wheel -->
+    <circle cx="78" cy="38" r="5" fill="rgba(255, 200, 124, 0.9)"/>
+    <circle cx="78" cy="38" r="3" fill="rgba(200, 100, 50, 0.6)"/>
+    <!-- Windows -->
+    <rect x="30" y="11" width="12" height="10" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+    <rect x="48" y="11" width="12" height="10" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+</svg>
+
+<svg class="car car-3" viewBox="0 0 110 55" xmlns="http://www.w3.org/2000/svg">
+    <!-- Car body -->
+    <rect x="9" y="23" width="92" height="19" rx="5" fill="rgba(150, 200, 255, 0.9)"/>
+    <!-- Car top -->
+    <rect x="28" y="10" width="54" height="17" rx="3" fill="rgba(150, 200, 255, 0.9)"/>
+    <!-- Front wheel -->
+    <circle cx="25" cy="42" r="6" fill="rgba(150, 200, 255, 0.9)"/>
+    <circle cx="25" cy="42" r="4" fill="rgba(100, 150, 200, 0.6)"/>
+    <!-- Rear wheel -->
+    <circle cx="85" cy="42" r="6" fill="rgba(150, 200, 255, 0.9)"/>
+    <circle cx="85" cy="42" r="4" fill="rgba(100, 150, 200, 0.6)"/>
+    <!-- Windows -->
+    <rect x="33" y="13" width="14" height="11" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+    <rect x="52" y="13" width="14" height="11" rx="2" fill="rgba(100, 150, 255, 0.3)"/>
+</svg>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="icon-car">
+                <i class="fas fa-car"></i>
+            </div>
+            <h2>Car Correction</h2>
+            <p>Repair Management System</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" id="loginForm">
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <input type="text" name="username" class="form-control" placeholder="Username" required>
+                    <span class="input-icon"><i class="fas fa-user"></i></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <input type="password" name="password" class="form-control" id="passwordInput" placeholder="Password" required>
+                    <span class="input-icon"><i class="fas fa-lock"></i></span>
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-login">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </button>
+        </form>
     </div>
-    {% endif %}
-
-    <form method="POST">
-        <input type="text" name="username" class="form-control mb-3" placeholder="Username" required>
-        <input type="password" name="password" class="form-control mb-4" placeholder="Password" required>
-        <button class="btn btn-dark w-100">Login</button>
-    </form>
 </div>
+
+<script>
+    // Add loading state on form submit
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const btn = event.target.querySelector('.btn-login');
+        btn.classList.add('loading');
+        btn.disabled = true;
+    });
+
+    // Password visibility toggle
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordToggle = document.getElementById('passwordToggle');
+
+    passwordToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        const icon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+</script>
 
 </body>
 </html>
