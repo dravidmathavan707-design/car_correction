@@ -3,7 +3,6 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from werkzeug.exceptions import RequestEntityTooLarge
 from functools import wraps
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -17,7 +16,6 @@ if os.path.isabs(UPLOAD_FOLDER):
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 else:
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, UPLOAD_FOLDER)
-app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -57,14 +55,6 @@ def handle_internal_error(_error):
         "login.html",
         error="Temporary server error. Please try again in a moment."
     ), 500
-
-
-@app.errorhandler(RequestEntityTooLarge)
-def handle_file_too_large(_error):
-    return render_template(
-        "add_repair.html",
-        error="Upload is too large. Please keep total photos under 10 MB."
-    ), 413
 
 # ---------------- ROLE DECORATOR ----------------
 def roles_required(*roles):
@@ -170,16 +160,49 @@ def dashboard():
 @roles_required("admin", "staff")
 def add_customer():
     if request.method == "POST":
+        uploaded_photos = request.files.getlist("damage_photos")
+
+        valid_photos = [p for p in uploaded_photos if p and p.filename != ""]
+
+        damage_photo_paths = []
+
+        for photo in valid_photos:
+            if not allowed_file(photo.filename):
+                return render_template(
+                    "add_customer.html",
+                    error="Only image files are allowed (jpg, jpeg, png, webp)."
+                )
+
+            filename = secure_filename(photo.filename)
+            extension = filename.rsplit(".", 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{extension}"
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            photo.save(save_path)
+            damage_photo_paths.append(f"uploads/repairs/{unique_filename}")
+
+        customer_name = request.form["name"]
+
         db.customers.insert_one({
-            "name": request.form["name"],
+            "name": customer_name,
             "phone": request.form["phone"],
             "vehicle": request.form["vehicle"],
             "created_at": datetime.now(),
             "is_deleted": False
         })
+
+        db.repairs.insert_one({
+            "customer": customer_name,
+            "service": request.form["service"],
+            "cost": request.form["cost"],
+            "warranty": request.form["warranty"],
+            "damage_photos": damage_photo_paths,
+            "status": "Pending",
+            "created_at": datetime.now()
+        })
+
         return redirect("/dashboard")
 
-    return render_template("add_customer.html")
+    return render_template("add_customer.html", error=None)
 
 @app.route("/delete_customer/<id>")
 @roles_required("admin", "staff")
@@ -194,48 +217,10 @@ def delete_customer(id):
     return redirect("/dashboard")
 
 # ---------------- REPAIR ----------------
-@app.route("/add_repair", methods=["GET", "POST"])
+@app.route("/add_repair", methods=["GET"])
 @roles_required("admin", "staff")
 def add_repair():
-    if request.method == "POST":
-        uploaded_photos = request.files.getlist("damage_photos")
-        
-        # Validate photo limit (max 13 photos per customer)
-        valid_photos = [p for p in uploaded_photos if p and p.filename != ""]
-        if len(valid_photos) > 13:
-            return render_template(
-                "add_repair.html",
-                error="Maximum 13 photos allowed per customer. Please reduce the number of photos."
-            )
-        
-        damage_photo_paths = []
-
-        for photo in valid_photos:
-            if not allowed_file(photo.filename):
-                return render_template(
-                    "add_repair.html",
-                    error="Only image files are allowed (jpg, jpeg, png, webp)."
-                )
-
-            filename = secure_filename(photo.filename)
-            extension = filename.rsplit(".", 1)[1].lower()
-            unique_filename = f"{uuid.uuid4().hex}.{extension}"
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-            photo.save(save_path)
-            damage_photo_paths.append(f"uploads/repairs/{unique_filename}")
-
-        db.repairs.insert_one({
-            "customer": request.form["customer"],
-            "service": request.form["service"],
-            "cost": request.form["cost"],
-            "warranty": request.form["warranty"],
-            "damage_photos": damage_photo_paths,
-            "status": "Pending",
-            "created_at": datetime.now()
-        })
-        return redirect("/dashboard")
-
-    return render_template("add_repair.html", error=None)
+    return redirect("/add_customer")
 
 @app.route("/delete_repair/<id>")
 @roles_required("admin", "staff")

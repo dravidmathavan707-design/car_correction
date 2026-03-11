@@ -68,10 +68,10 @@
         <input type="number" name="cost" class="form-control mb-3" placeholder="Cost" required>
         <input type="number" name="warranty" class="form-control mb-3" placeholder="Warranty (Months)">
         
-        <label class="form-label">Damaged Part Photos (Optional - Max 13 Photos)</label>
+        <label class="form-label">Damaged Part Photos (Optional)</label>
         
         <div class="photo-count">
-            Photos selected: <span id="photo-count">0</span> / 13
+            Photos selected: <span id="photo-count">0</span>
         </div>
         
         <!-- Hidden file inputs -->
@@ -90,7 +90,7 @@
         <div class="photo-preview" id="photo-preview"></div>
         
         <small class="text-muted d-block mb-3">
-            You can add up to 13 photos per customer. Supported formats: jpg, jpeg, png, webp
+            You can add multiple photos. Supported formats: jpg, jpeg, png, webp
         </small>
 
         <button type="submit" class="btn btn-warning">Save Repair</button>
@@ -99,7 +99,6 @@
 
 <script>
     let selectedFiles = [];
-    const maxPhotos = 13;
     const cameraInput = document.getElementById('camera-input');
     const galleryInput = document.getElementById('gallery-input');
     const cameraBtn = document.getElementById('camera-btn');
@@ -119,11 +118,6 @@
 
     function handleFileSelection(files) {
         for (let file of files) {
-            if (selectedFiles.length >= maxPhotos) {
-                alert(`Maximum ${maxPhotos} photos allowed`);
-                break;
-            }
-            
             // Check if file is already selected
             if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
                 selectedFiles.push(file);

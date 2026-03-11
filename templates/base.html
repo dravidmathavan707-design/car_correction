@@ -259,11 +259,8 @@
             </a>
             {% endif %}
 
-            <a href="/add_customer" class="menu-link {% if request.path == '/add_customer' %}active{% endif %}">
-                <i class="fa-solid fa-user-plus"></i> Add Customer
-            </a>
-            <a href="/add_repair" class="menu-link {% if request.path == '/add_repair' %}active{% endif %}">
-                <i class="fa-solid fa-screwdriver-wrench"></i> Add Repair
+            <a href="/add_customer" class="menu-link {% if request.path == '/add_customer' or request.path == '/add_repair' %}active{% endif %}">
+                <i class="fa-solid fa-user-plus"></i> New Service Entry
             </a>
 
             <hr>
