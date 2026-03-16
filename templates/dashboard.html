@@ -319,6 +319,7 @@
                         <th><i class="fas fa-user me-2"></i>Name</th>
                         <th><i class="fas fa-phone me-2"></i>Phone</th>
                         <th><i class="fas fa-car me-2"></i>Vehicle</th>
+                        <th><i class="fas fa-clock me-2"></i>Date & Time</th>
                         <th><i class="fas fa-cog me-2"></i>Action</th>
                     </tr>
                 </thead>
@@ -329,11 +330,26 @@
                         <td>{{ c.phone }}</td>
                         <td>{{ c.vehicle }}</td>
                         <td>
-                            <a href="/delete_customer/{{ c._id }}" 
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Are you sure you want to delete this customer?')">
-                               <i class="fas fa-trash me-1"></i>Delete
-                            </a>
+                            {% if c.created_at %}
+                                {{ c.created_at.strftime('%d-%m-%Y %I:%M %p') }}
+                            {% elif c.created_date or c.created_time %}
+                                {{ c.created_date|default('-', true) }} {{ c.created_time|default('', true) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                                     <div class="d-flex gap-2 flex-wrap">
+                                          <a href="/edit_customer/{{ c._id }}" 
+                                              class="btn btn-primary btn-sm">
+                                              <i class="fas fa-pen me-1"></i>Edit
+                                          </a>
+                                          <a href="/delete_customer/{{ c._id }}" 
+                                              class="btn btn-danger btn-sm"
+                                              onclick="return confirm('Are you sure you want to delete this customer?')">
+                                              <i class="fas fa-trash me-1"></i>Delete
+                                          </a>
+                                     </div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -356,7 +372,8 @@
                         <th><i class="fas fa-user me-2"></i>Customer</th>
                         <th><i class="fas fa-list me-2"></i>Service</th>
                         <th><i class="fas fa-money-bill me-2"></i>Cost</th>
-                        <th><i class="fas fa-calendar me-2"></i>Warranty</th>
+                        <th><i class="fas fa-sticky-note me-2"></i>Notes</th>
+                        <th><i class="fas fa-clock me-2"></i>Date & Time</th>
                         <th><i class="fas fa-image me-2"></i>Damaged Photos</th>
                         <th><i class="fas fa-info-circle me-2"></i>Status</th>
                         <th><i class="fas fa-cog me-2"></i>Action</th>
@@ -368,13 +385,27 @@
                         <td><strong>{{ r.customer }}</strong></td>
                         <td>{{ r.service }}</td>
                         <td><strong>₹ {{ r.cost }}</strong></td>
-                        <td>{{ r.warranty }} Months</td>
+                        <td>{{ r.notes|default('-', true) }}</td>
                         <td>
-                            {% if r.damage_photos %}
-                                {% for photo in r.damage_photos %}
-                                <a href="{{ url_for('static', filename=photo) }}" target="_blank" rel="noopener noreferrer" class="me-1 d-inline-block mb-1">
-                                    <img src="{{ url_for('static', filename=photo) }}" alt="Damaged part" class="photo-thumbnail" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:2px solid #e0e0e0;">
-                                </a>
+                            {% if r.created_at %}
+                                {{ r.created_at.strftime('%d-%m-%Y %I:%M %p') }}
+                            {% elif r.created_date or r.created_time %}
+                                {{ r.created_date|default('-', true) }} {{ r.created_time|default('', true) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.damage_photo_urls %}
+                                {% for photo_url in r.damage_photo_urls %}
+                                <div class="d-inline-block me-2 mb-2 text-center">
+                                    <a href="{{ photo_url }}" target="_blank" rel="noopener noreferrer" class="d-inline-block mb-1">
+                                        <img src="{{ photo_url }}" alt="Damaged part" class="photo-thumbnail" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:2px solid #e0e0e0;">
+                                    </a>
+                                    <div>
+                                        <a href="{{ photo_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary py-0 px-2">View</a>
+                                    </div>
+                                </div>
                                 {% endfor %}
                             {% else %}
                                 <span class="text-muted-custom"><i class="fas fa-image me-1"></i>No photos</span>
@@ -384,11 +415,17 @@
                             <span class="badge badge-{{ r.status|lower }}">{{ r.status }}</span>
                         </td>
                         <td>
-                            <a href="/delete_repair/{{ r._id }}" 
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Are you sure you want to delete this repair?')">
-                               <i class="fas fa-trash me-1"></i>Delete
-                            </a>
+                                     <div class="d-flex gap-2 flex-wrap">
+                                          <a href="/edit_repair/{{ r._id }}" 
+                                              class="btn btn-primary btn-sm">
+                                              <i class="fas fa-pen me-1"></i>Edit
+                                          </a>
+                                          <a href="/delete_repair/{{ r._id }}" 
+                                              class="btn btn-danger btn-sm"
+                                              onclick="return confirm('Are you sure you want to delete this repair?')">
+                                              <i class="fas fa-trash me-1"></i>Delete
+                                          </a>
+                                     </div>
                         </td>
                     </tr>
                 {% endfor %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-4 shadow col-md-8">
+    <h4>Edit Repair Details</h4>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <input type="text" name="customer" class="form-control mb-3" placeholder="Customer Name" value="{{ repair.customer }}" required>
+        <input type="text" name="service" class="form-control mb-3" placeholder="Service Type" value="{{ repair.service }}" required>
+        <input type="number" name="cost" class="form-control mb-3" placeholder="Cost" value="{{ repair.cost }}" required>
+        <textarea name="notes" class="form-control mb-3" rows="3" placeholder="Important Notes (for admin/staff)">{{ repair.notes|default('', true) }}</textarea>
+
+        <select name="status" class="form-control mb-3" required>
+            <option value="Pending" {% if repair.status == 'Pending' %}selected{% endif %}>Pending</option>
+            <option value="In-Progress" {% if repair.status == 'In-Progress' %}selected{% endif %}>In-Progress</option>
+            <option value="Completed" {% if repair.status == 'Completed' %}selected{% endif %}>Completed</option>
+        </select>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Update Repair</button>
+            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

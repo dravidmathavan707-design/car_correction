@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-4 shadow col-md-8">
+    <h4>Edit Customer Details</h4>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <input type="text" name="name" class="form-control mb-3" placeholder="Name" value="{{ customer.name }}" required>
+        <input type="text" name="phone" class="form-control mb-3" placeholder="Phone" value="{{ customer.phone }}" required>
+        <input type="text" name="vehicle" class="form-control mb-3" placeholder="Vehicle Number" value="{{ customer.vehicle }}" required>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Update Customer</button>
+            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

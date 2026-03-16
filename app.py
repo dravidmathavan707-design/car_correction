@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, abort
+from flask import Flask, render_template, request, redirect, session, abort, send_from_directory, url_for
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -22,6 +22,33 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+def normalize_photo_path(photo_path):
+    if not photo_path:
+        return ""
+    normalized_path = str(photo_path).replace("\\", "/").strip()
+    normalized_path = normalized_path.lstrip("/")
+
+    if normalized_path.startswith("static/"):
+        normalized_path = normalized_path[len("static/"):]
+
+    if "/" not in normalized_path:
+        normalized_path = f"uploads/repairs/{normalized_path}"
+
+    return normalized_path
+
+
+def extract_photo_filename(photo_path):
+    normalized_path = normalize_photo_path(photo_path)
+    return os.path.basename(normalized_path)
+
+
+def get_photo_storage_dirs():
+    return [
+        app.config['UPLOAD_FOLDER'],
+        os.path.join(app.root_path, "uploads", "repairs")
+    ]
 
 client = MongoClient(
     os.getenv('MONGO_URI', MONGO_URI),
@@ -146,6 +173,17 @@ def dashboard():
     customers = list(db.customers.find(query_customer))
     repairs = list(db.repairs.find(query_repair))
 
+    for repair in repairs:
+        normalized_photos = []
+        photo_urls = []
+        for photo in repair.get("damage_photos", []):
+            normalized_photo = normalize_photo_path(photo)
+            if normalized_photo:
+                normalized_photos.append(normalized_photo)
+                photo_urls.append(url_for("repair_photo", photo_path=normalized_photo))
+        repair["damage_photos"] = normalized_photos
+        repair["damage_photo_urls"] = photo_urls
+
     total_customers = db.customers.count_documents({"is_deleted": False})
     total_repairs = db.repairs.count_documents({})
 
@@ -181,12 +219,15 @@ def add_customer():
             damage_photo_paths.append(f"uploads/repairs/{unique_filename}")
 
         customer_name = request.form["name"]
+        created_at = datetime.now()
 
         db.customers.insert_one({
             "name": customer_name,
             "phone": request.form["phone"],
             "vehicle": request.form["vehicle"],
-            "created_at": datetime.now(),
+            "created_at": created_at,
+            "created_date": created_at.strftime("%d-%m-%Y"),
+            "created_time": created_at.strftime("%I:%M %p"),
             "is_deleted": False
         })
 
@@ -194,10 +235,12 @@ def add_customer():
             "customer": customer_name,
             "service": request.form["service"],
             "cost": request.form["cost"],
-            "warranty": request.form["warranty"],
+            "notes": request.form.get("notes", "").strip(),
             "damage_photos": damage_photo_paths,
             "status": "Pending",
-            "created_at": datetime.now()
+            "created_at": created_at,
+            "created_date": created_at.strftime("%d-%m-%Y"),
+            "created_time": created_at.strftime("%I:%M %p")
         })
 
         return redirect("/dashboard")
@@ -216,6 +259,40 @@ def delete_customer(id):
         db.customers.delete_one({"_id": ObjectId(id)})
     return redirect("/dashboard")
 
+
+@app.route("/edit_customer/<id>", methods=["GET", "POST"])
+@roles_required("admin", "staff")
+def edit_customer(id):
+    customer = db.customers.find_one({"_id": ObjectId(id)})
+    if not customer:
+        abort(404)
+
+    if request.method == "POST":
+        old_name = customer.get("name", "")
+        new_name = request.form["name"].strip()
+
+        db.customers.update_one(
+            {"_id": ObjectId(id)},
+            {
+                "$set": {
+                    "name": new_name,
+                    "phone": request.form["phone"].strip(),
+                    "vehicle": request.form["vehicle"].strip(),
+                    "updated_at": datetime.now()
+                }
+            }
+        )
+
+        if old_name and new_name and old_name != new_name:
+            db.repairs.update_many(
+                {"customer": old_name},
+                {"$set": {"customer": new_name, "updated_at": datetime.now()}}
+            )
+
+        return redirect("/dashboard")
+
+    return render_template("edit_customer.html", customer=customer, error=None)
+
 # ---------------- REPAIR ----------------
 @app.route("/add_repair", methods=["GET"])
 @roles_required("admin", "staff")
@@ -230,12 +307,52 @@ def delete_repair(id):
     # Best effort cleanup for previously uploaded damaged-part photos.
     if repair and repair.get("damage_photos"):
         for relative_path in repair.get("damage_photos", []):
-            photo_path = os.path.join(app.static_folder, relative_path.replace("/", os.sep))
-            if os.path.exists(photo_path):
-                os.remove(photo_path)
+            filename = extract_photo_filename(relative_path)
+            for folder in get_photo_storage_dirs():
+                photo_path = os.path.join(folder, filename)
+                if os.path.exists(photo_path):
+                    os.remove(photo_path)
+                    break
 
     db.repairs.delete_one({"_id": ObjectId(id)})
     return redirect("/dashboard")
+
+
+@app.route("/edit_repair/<id>", methods=["GET", "POST"])
+@roles_required("admin", "staff")
+def edit_repair(id):
+    repair = db.repairs.find_one({"_id": ObjectId(id)})
+    if not repair:
+        abort(404)
+
+    if request.method == "POST":
+        db.repairs.update_one(
+            {"_id": ObjectId(id)},
+            {
+                "$set": {
+                    "customer": request.form["customer"].strip(),
+                    "service": request.form["service"].strip(),
+                    "cost": request.form["cost"].strip(),
+                    "notes": request.form.get("notes", "").strip(),
+                    "status": request.form["status"],
+                    "updated_at": datetime.now()
+                }
+            }
+        )
+        return redirect("/dashboard")
+
+    return render_template("edit_repair.html", repair=repair, error=None)
+
+
+@app.route("/repair-photo/<path:photo_path>")
+@roles_required("admin", "staff")
+def repair_photo(photo_path):
+    filename = extract_photo_filename(photo_path)
+    for folder in get_photo_storage_dirs():
+        file_path = os.path.join(folder, filename)
+        if os.path.exists(file_path):
+            return send_from_directory(folder, filename)
+    abort(404)
 
 # ---------------- STAFF MANAGEMENT ----------------
 @app.route("/staff_management")
